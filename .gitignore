@@ -1,0 +1,7 @@
+/target
+/Cargo.lock
+Games
+game.pdx
+.sentry-native
+Source/pdex.bin
+Source/pdex.dll
