@@ -37,12 +37,15 @@ pub enum PDLanguage {
 	PDLanguageUnknown,
 }
 
-/* 
+/*
 typedef struct PDMenuItem PDMenuItem;
 */
 
 #[repr(C)]
-pub struct PDMenuItem;
+pub struct PDMenuItem {
+	_data: [u8; 0],
+	_marker: core::marker::PhantomData<(*mut u8, core::marker::PhantomPinned)>
+}
 
 /*
 typedef enum
@@ -109,9 +112,9 @@ struct playdate_sys
 	void (*setMenuItemTitle)(PDMenuItem *menuItem, const char *title);
 	void* (*getMenuItemUserdata)(PDMenuItem *menuItem);
 	void (*setMenuItemUserdata)(PDMenuItem *menuItem, void *ud);
-	
+
 	int (*getReduceFlashing)(void);
-	
+
 	// 1.1
 	float (*getElapsedTime)(void);
 	void (*resetElapsedTime)(void);
@@ -151,9 +154,109 @@ pub struct PlaydateSys {
 
 
 	// void (*setUpdateCallback)(PDCallbackFunction* update, void* userdata);
-	pub set_update_callback: unsafe extern "C" fn(PDCallbackFunction, *const c_void),
+	pub set_update_callback: unsafe extern "C" fn(update: PDCallbackFunction, userdata: *const c_void),
 
 	// void (*getButtonState)(PDButtons* current, PDButtons* pushed, PDButtons* released);
+	pub get_button_state: unsafe extern "C" fn(current: *mut PDButtons, pushed: *mut PDButtons, released: *mut PDButtons),
+
 	// void (*setPeripheralsEnabled)(PDPeripherals mask);
+	pub set_peripherals_enabled: unsafe extern "C" fn(mask: PDPeripherals),
+
 	// void (*getAccelerometer)(float* outx, float* outy, float* outz);
+	pub get_accelerometer: unsafe extern "C" fn(outx: *mut f32, outy: *mut f32, outz: *mut f32),
+
+
+
+	// float (*getCrankChange)(void);
+	pub get_crank_change: unsafe extern "C" fn() -> f32,
+
+	// float (*getCrankAngle)(void);
+	pub get_crank_angle: unsafe extern "C" fn() -> f32,
+
+	// int (*isCrankDocked)(void);
+	pub is_crank_docked: unsafe extern "C" fn() -> i32,
+
+	// int (*setCrankSoundsDisabled)(int flag); // returns previous setting
+	pub set_crank_sound_disabled: unsafe extern "C" fn(flag: i32) -> i32,
+
+
+
+	// int (*getFlipped)(void);
+	pub get_flipped: unsafe extern "C" fn() -> i32,
+
+	// void (*setAutoLockDisabled)(int disable);
+	pub set_auto_lock_disabled: unsafe extern "C" fn(disable: i32),
+
+
+
+	// void (*setMenuImage)(LCDBitmap* bitmap, int xOffset);
+	pub set_menu_image: unsafe extern "C" fn(disable: i32),
+
+	// PDMenuItem* (*addMenuItem)(const char *title, PDMenuItemCallbackFunction* callback, void* userdata);
+	pub add_menu_item: unsafe extern "C" fn(
+		title: *const char,
+		callback: PDMenuItemCallbackFunction,
+		userdata: *mut c_void
+	) -> *const PDMenuItem,
+
+	// PDMenuItem* (*addCheckmarkMenuItem)(const char *title, int value, PDMenuItemCallbackFunction* callback, void* userdata);
+	pub add_checkmark_menu_item: unsafe extern "C" fn(
+		title: *const char,
+		callback: PDMenuItemCallbackFunction,
+		userdata: *mut c_void
+	) -> *const PDMenuItem,
+
+	// PDMenuItem* (*addOptionsMenuItem)(const char *title, const char** optionTitles, int optionsCount, PDMenuItemCallbackFunction* f, void* userdata);
+	pub add_options_menu_item: unsafe extern "C" fn(
+		title: *const char,
+		option_titles: *mut *const char,
+		options_count: i32,
+		callback: PDMenuItemCallbackFunction,
+		userdata: *mut c_void
+	) -> *const PDMenuItem,
+
+	// void (*removeAllMenuItems)(void);
+	pub remove_all_menu_items: unsafe extern "C" fn(),
+
+	// void (*removeMenuItem)(PDMenuItem *menuItem);
+	pub remove_menu_item: unsafe extern "C" fn(menu_item: *const PDMenuItem),
+
+	// int (*getMenuItemValue)(PDMenuItem *menuItem);
+	pub get_menu_item_value: unsafe extern "C" fn(menu_item: *const PDMenuItem) -> i32,
+
+	// void (*setMenuItemValue)(PDMenuItem *menuItem, int value);
+	pub set_menu_item_value: unsafe extern "C" fn(menu_item: *const PDMenuItem, value: i32),
+
+	// const char* (*getMenuItemTitle)(PDMenuItem *menuItem);
+	pub get_menu_item_title: unsafe extern "C" fn(menu_item: *const PDMenuItem) -> *const char,
+
+	// void (*setMenuItemTitle)(PDMenuItem *menuItem, const char *title);
+	pub set_menu_item_title: unsafe extern "C" fn(menu_item: *const PDMenuItem, title: *const char),
+
+	// void* (*getMenuItemUserdata)(PDMenuItem *menuItem);
+	pub get_menu_item_user_data: unsafe extern "C" fn(menu_item: *const PDMenuItem) -> *mut c_void,
+
+	// void (*setMenuItemUserdata)(PDMenuItem *menuItem, void *ud);
+	pub set_menu_item_user_data: unsafe extern "C" fn(menu_item: *const PDMenuItem, *mut c_void),
+
+
+
+	// int (*getReduceFlashing)(void);
+	pub get_reduce_flashing: unsafe extern "C" fn() -> i32,
+
+
+	// // 1.1
+	// float (*getElapsedTime)(void);
+	pub get_elapsed_time: unsafe extern "C" fn() -> f32,
+
+	// void (*resetElapsedTime)(void);
+	pub reset_elapsed_time: unsafe extern "C" fn(),
+
+
+	// // 1.4
+	// float (*getBatteryPercentage)(void);
+	pub get_battery_percentage: unsafe extern "C" fn() -> f32,
+
+	// float (*getBatteryVoltage)(void);
+	pub get_battery_voltage: unsafe extern "C" fn() -> f32,
 }

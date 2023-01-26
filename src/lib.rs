@@ -14,7 +14,7 @@ pub struct PlaydateAPI {
 
 #[no_mangle]
 pub unsafe extern "C" fn eventHandler(
-    pd: *const PlaydateAPI, 
+    pd: *const PlaydateAPI,
     ev: SystemEvent,
     arg: u32
 ) -> i32 {
