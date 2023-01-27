@@ -7,7 +7,7 @@ use crate::{
 static mut PD_API: Option<&PlaydateAPI> = None;
 
 pub unsafe fn set_pd_api(pd_api: *const PlaydateAPI){
-    PD_API = pd_api.as_ref(); 
+    PD_API = pd_api.as_ref();
 }
 
 pub struct PDAllocator;
@@ -31,7 +31,7 @@ unsafe impl GlobalAlloc for PDAllocator {
             .map(|sys: &PlaydateSys|{
                 std::mem::transmute::<*mut c_void, *mut u8>(
                     (sys.realloc)(
-                        null_mut(), 
+                        null_mut(),
                         size + hdr_size
                     )
                 )
@@ -48,15 +48,15 @@ unsafe impl GlobalAlloc for PDAllocator {
         }
 
         let aligned_mem = mem.offset((align_offset + PTR_SIZE) as isize);
-        
+
         // store the pointer to the memory at the address before
         *(std::mem::transmute::<*mut u8, *mut *mut u8>(aligned_mem).offset(-1)) = mem;
 
-        (pd_api.system.as_ref().unwrap().log_to_console)(
-            std::mem::transmute(b"PTR ALLOCED: %p\nPTR ALLOCED (ALIGNED): %p\0"),
-            std::mem::transmute::<*mut u8, *mut c_void>(mem),
-            std::mem::transmute::<*mut u8, *mut c_void>(aligned_mem)
-        );
+        // (pd_api.system.as_ref().unwrap().log_to_console)(
+        //     std::mem::transmute(b"PTR ALLOCED: %p\nPTR ALLOCED (ALIGNED): %p\0"),
+        //     std::mem::transmute::<*mut u8, *mut c_void>(mem),
+        //     std::mem::transmute::<*mut u8, *mut c_void>(aligned_mem)
+        // );
 
         aligned_mem
     }
@@ -68,10 +68,10 @@ unsafe impl GlobalAlloc for PDAllocator {
 
         let pd_api = PD_API.unwrap();
 
-        (pd_api.system.as_ref().unwrap().log_to_console)(
-            std::mem::transmute(b"PTR TO DEALLOC: %p\0"),
-            std::mem::transmute::<*mut u8, *mut c_void>(aligned_mem)
-        );
+        // (pd_api.system.as_ref().unwrap().log_to_console)(
+        //     std::mem::transmute(b"PTR TO DEALLOC: %p\0"),
+        //     std::mem::transmute::<*mut u8, *mut c_void>(aligned_mem)
+        // );
 
         const ptr_size: usize = std::mem::size_of::<*mut u8>();
 

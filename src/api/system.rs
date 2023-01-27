@@ -1,4 +1,5 @@
 use std::ffi::c_void;
+use bitflags::bitflags;
 /*
 typedef enum
 {
@@ -11,14 +12,15 @@ typedef enum
 } PDButtons;
 */
 
-#[repr(C)]
-pub enum PDButtons {
-    ButtonLeft		= (1<<0),
-	ButtonRight	    = (1<<1),
-    ButtonUp		= (1<<2),
-	ButtonDown		= (1<<3),
-	ButtonB		    = (1<<4),
-	ButtonA		    = (1<<5),
+bitflags! {
+    pub struct PDButtons: i32 {
+        const LEFT 	= (1<<0);
+		const RIGHT	= (1<<1);
+		const UP		= (1<<2);
+		const DOWN	= (1<<3);
+		const B		= (1<<4);
+		const A		= (1<<5);
+    }
 }
 
 /*
@@ -146,10 +148,10 @@ pub struct PlaydateSys {
 	pub get_current_time_milliseconds: unsafe extern "C" fn() -> i32,
 
 	// unsigned int (*getSecondsSinceEpoch)(unsigned int *milliseconds);
-	pub get_seconds_since_epoch: unsafe extern "C" fn(*mut u32) -> u32,
+	pub get_seconds_since_epoch: unsafe extern "C" fn(s: *mut u32) -> u32,
 
 	// void (*drawFPS)(int x, int y);
-	pub draw_fps: unsafe extern "C" fn(i32, i32),
+	pub draw_fps: unsafe extern "C" fn(x: i32, y: i32),
 
 
 
@@ -158,9 +160,9 @@ pub struct PlaydateSys {
 
 	// void (*getButtonState)(PDButtons* current, PDButtons* pushed, PDButtons* released);
 	pub get_button_state: unsafe extern "C" fn(
-		current: Option<*mut PDButtons>, 
-		pushed: Option<*mut PDButtons>, 
-		released: Option<*mut PDButtons>
+		current: *mut i32,
+		pushed: *mut i32,
+		released: *mut i32
 	),
 
 	// void (*setPeripheralsEnabled)(PDPeripherals mask);

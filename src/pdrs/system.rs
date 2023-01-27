@@ -1,28 +1,37 @@
 use std::{ffi::{CString, NulError}, pin::Pin, mem::MaybeUninit};
 
+use na::Vector2;
+
 use crate::{
     api::system::{
-        PlaydateSys, 
+        PlaydateSys,
         PDCallbackFunction,
         PDButtons
     }
 };
 
-pub struct System<'a>(&'a PlaydateSys);
+pub use crate::{
+    api::system::{PDLanguage as Language}
+};
 
-pub type UpdateCallback<T> = extern "C" fn(userdata: &T) -> i32;
+pub struct System(PlaydateSys);
+
+pub type UpdateCallback<T> = extern "C" fn(userdata: &mut T) -> i32;
+
+
 
 pub struct ButtonState {
-    pub down: PDButtons,
+    pub current: PDButtons,
     pub pushed: PDButtons,
     pub released: PDButtons,
 }
 
-impl<'a> System<'a> {
-    pub fn api(&self) -> &'a PlaydateSys {
-        self.0
+impl System {
+    pub fn api(&self) -> &PlaydateSys {
+        &self.0
     }
 
+    /*-------------PRINTING----------------*/
     pub fn print<T: Into<Vec<u8>>>(&self, s: T)
     {
         self.print_checked(s).unwrap()
@@ -36,39 +45,110 @@ impl<'a> System<'a> {
             })
     }
 
-    pub fn set_update_callback<T>(&self, f: UpdateCallback<T>, userdata: &T) {
+    pub fn error<T: Into<Vec<u8>>>(&self, s: T)
+    {
+        self.error_checked(s).unwrap()
+    }
+
+    pub fn error_checked<T: Into<Vec<u8>>>(&self, s: T) -> Result<(), NulError>
+    {
+        CString::new(s)
+            .map(|cstring|{
+                unsafe { (self.0.error)(std::mem::transmute(cstring.into_raw())) };
+            })
+    }
+
+
+    /*---------------LANGUAGE------------------*/
+    pub fn get_language(&self) -> Language {
+        unsafe { (self.0.get_language)() }
+    }
+
+    /*----------------TIME---------------- */
+    pub fn get_unix_time_seconds_milliseconds(&self) -> (u32, u32) {
+        let mut ms: MaybeUninit<u32> = MaybeUninit::uninit();
+        let seconds = unsafe { (self.0.get_seconds_since_epoch)(ms.as_mut_ptr()) };
+        (seconds, unsafe { ms.assume_init() })
+    }
+
+    pub fn get_unix_time_seconds(&self) -> u32 {
+        self.get_unix_time_seconds_milliseconds().0
+    }
+
+    pub fn get_unix_time_milliseconds(&self) -> u32 {
+        self.get_unix_time_seconds_milliseconds().1
+    }
+
+
+    pub fn get_elapsed_time(&self) -> f32 {
+        unsafe { (self.0.get_elapsed_time)() }
+    }
+
+    pub fn reset_elapsed_time(&self) {
+        unsafe { (self.0.reset_elapsed_time)(); }
+    }
+
+
+    /*-----------------UTIL-------------- */
+    pub fn draw_fps(&self, pos: Vector2<i32>){
+        unsafe { (self.0.draw_fps)(pos.x, pos.y); }
+    }
+
+
+    /*--------------UPDATE CALLBACK------------------*/
+    pub fn set_update_callback<T>(&self, f: UpdateCallback<T>, userdata: &mut T) {
         unsafe { (self.0.set_update_callback)(std::mem::transmute(f), std::mem::transmute(userdata)); }
     }
 
-    pub fn get_button_state(&self) -> ButtonState {
+    /*-------------INPUT--------------------- */
+    pub fn get_button_state_raw(&self) -> (i32,i32,i32) {
         unsafe {
-            let mut button_state: ButtonState = ButtonState {
-                down: PDButtons::ButtonA,
-                pushed: PDButtons::ButtonA,
-                released: PDButtons::ButtonA
-            };
-            
-            let mut button_down: MaybeUninit<PDButtons> = MaybeUninit::uninit();
+            let mut current: i32 = 0;
+            let mut pushed: i32 = 0;
+            let mut released: i32 = 0;
             (self.0.get_button_state)(
-                Some(button_down.as_mut_ptr()),
-                Some(&mut button_state.pushed),
-                Some(&mut button_state.released)
+                &mut current,
+                &mut pushed,
+                &mut released
             );
-            button_state
+            (current, pushed, released)
         }
     }
-}
 
-impl<'a> From<&'a PlaydateSys> for System<'a> {
-    fn from(pd_api: &'a PlaydateSys) -> Self {
-        Self(pd_api)
+    pub fn get_button_state(&self) -> ButtonState {
+        let (current, pushed, released) = self.get_button_state_raw();
+        unsafe {
+            ButtonState{
+                current: PDButtons::from_bits_unchecked(current),
+                pushed: PDButtons::from_bits_unchecked(pushed),
+                released: PDButtons::from_bits_unchecked(released)
+            }
+        }
     }
-}
 
-impl<'a> From<*const PlaydateSys> for System<'a> {
-    fn from(pd_api_ptr: *const PlaydateSys) -> Self {
-        Self(unsafe { 
-            pd_api_ptr.as_ref().expect("pd_api_raw is null"
-        )})
+    pub fn get_buttons_current(&self) -> PDButtons {
+        self.get_button_state().current
+    }
+
+    pub fn get_buttons_pushed(&self) -> PDButtons {
+        self.get_button_state().pushed
+    }
+
+    pub fn get_buttons_released(&self) -> PDButtons {
+        self.get_button_state().released
+    }
+
+    pub fn get_dpad_axes(&self) -> na::Vector2<f32> {
+        let cur = self.get_buttons_current();
+        na::Vector2::new(
+            if cur.contains(PDButtons::LEFT) { -1f32 } else { 0f32 }
+            + if cur.contains(PDButtons::RIGHT) { 1f32 } else { 0f32 },
+            if cur.contains(PDButtons::UP) { 1f32 } else { 0f32 }
+            + if cur.contains(PDButtons::DOWN) { -1f32 } else { 0f32 },
+        )
+    }
+
+    pub fn get_dpad_axes_normalized(&self) -> na::Vector2<f32> {
+        self.get_dpad_axes().normalize()
     }
 }

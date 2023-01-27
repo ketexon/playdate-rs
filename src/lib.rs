@@ -1,23 +1,29 @@
-use pdrs::alloc::set_pd_api;
-use std::{ffi::{c_void}, ptr::null};
-use std::pin::Pin;
+pub extern crate nalgebra as na;
+
+use std::{ptr::{null_mut, null}, default};
+
+use na::Vector2;
+use pdrs::{graphics::Color};
 
 pub(crate) mod api;
 pub(crate) mod pdrs;
 use api::{
     PlaydateAPI,
-    event::{SystemEvent}, graphics::{LCDColor, LCDSolidColor},
+    event::{SystemEvent}, graphics::{LCDSolidColor}, system::PDButtons,
 };
 
 use pdrs::playdate::Playdate;
 
 #[repr(C)]
-pub struct UserData {
-    pub pd: &'static Playdate,
-    pub x: f32, pub y: f32,
+pub enum SceneData {
+    Main{text_pos: na::Vector2<f32>},
 }
 
-// static mut PD: Option<Box<Playdate>> = None;
+#[repr(C)]
+pub struct UserData {
+    pub pd: &'static Playdate,
+    pub scene: SceneData
+}
 
 #[no_mangle]
 pub unsafe extern "C" fn eventHandler(
@@ -26,37 +32,45 @@ pub unsafe extern "C" fn eventHandler(
     ev: SystemEvent,
     arg: u32
 ) -> i32 {
+    static mut USERDATA: Option<Box<UserData>> = None;
     match ev {
         SystemEvent::Init => {
-            {
-                // let pd = Playdate::from(pd_raw);
-                // pd.init_allocator();
-                // PD = Some(Box::new(pd.clone()));
-            }
             pd.init_allocator();
-            // PD = Some(Box::new(pd_ref));
-            
 
-            // let pd: &Box<Playdate> = PD.as_ref().unwrap();
-            
-            // pd.sys().set_update_callback::<Playdate>(update, &*pd);
-            static mut USERDATA: Option<UserData> = None;
-            USERDATA = Some(UserData {
+            USERDATA = Some(Box::new(UserData {
                 pd: pd,
-                x: 0f32, y: 0f32
-            });
-            pd.sys().set_update_callback(update0, USERDATA.as_ref().unwrap());
+                scene: SceneData::Main { text_pos: Vector2::new(200f32, 150f32) }
+            }));
+            pd.system.set_update_callback(update0, USERDATA.as_mut().unwrap());
         }
         _ => {
-            // let pd = PD.as_ref().unwrap();
         }
     };
     0
 }
 
-pub extern "C" fn update0(userdata: &UserData) -> i32 {
-    let &UserData {pd, x, y} = userdata;
-    pd.print("Hello");
+pub extern "C" fn update0(mut userdata: &mut UserData) -> i32 {
+    let UserData {pd, scene} = &mut userdata;
+
+    match scene {
+        SceneData::Main { ref mut text_pos } => {
+            let s = pd.system.get_unix_time_seconds();
+            let clear_color = if s % 2 == 0 {
+                Color::Solid(LCDSolidColor::Black)
+            } else {
+                Color::Solid(LCDSolidColor::White)
+            };
+            pd.graphics.clear(clear_color);
+
+            // let (current, pushed, released) = pd.system.get_button_state_raw();
+
+            *text_pos += Vector2::new(1f32, 0f32);
+            pd.print(format!("Text Pos: {}, {}", text_pos.x, text_pos.y));
+            pd.graphics.draw_text("Helo", text_pos.try_cast().unwrap());
+            pd.system.draw_fps(Vector2::new(0,0));
+        }
+    }
+
     // pd.sys().api().get_button_state
     1
 }

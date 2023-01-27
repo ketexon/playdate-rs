@@ -1,28 +1,30 @@
+use crate::api::file;
 use crate::api::{
     PlaydateAPI,
     system::PlaydateSys
 };
 use super::alloc;
 use super::system::System;
+use super::graphics::Graphics;
 
 #[repr(C)]
-pub struct Playdate(PlaydateAPI);
+pub struct Playdate {
+    pub system: &'static System,
+    pub file: *const file::PlaydateFile,
+    pub graphics: &'static Graphics
+}
 
 impl Playdate {
     pub fn init_allocator(&self) {
-        unsafe { alloc::set_pd_api(&self.0); }
+        unsafe { alloc::set_pd_api(self.api()); }
     }
 
     pub fn api(&self) -> &PlaydateAPI {
-        &self.0
+        unsafe { std::mem::transmute(self) }
     }
 
-    pub fn sys(&self) -> System {
-        unsafe { System::from(self.0.system.as_ref().expect("System is NULL")) }
-    }
-
-    // Redefinitions of common functions
+    /*-------------Redefinitions of common functions-------------*/
     pub fn print<T: Into<Vec<u8>>>(&self, s: T) {
-        self.sys().print(s);
+        self.system.print(s);
     }
 }

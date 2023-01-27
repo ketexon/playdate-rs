@@ -88,6 +88,8 @@ struct playdate_graphics
 };
 */
 
+use std::ffi::c_void;
+
 #[repr(C)]
 pub struct PlaydateGraphics {
 	// const struct playdate_video* video;
@@ -153,10 +155,32 @@ pub struct PlaydateGraphics {
 	pub draw_rect: extern "C" fn(x: i32, y: i32, w: i32, h: i32, color: LCDColor),
 
 	// void (*fillRect)(int x, int y, int width, int height, LCDColor color);
+	pub fill_rect: extern "C" fn(x: i32, y: i32, w: i32, h: i32, color: LCDColor),
+
 	// void (*drawEllipse)(int x, int y, int width, int height, int lineWidth, float startAngle, float endAngle, LCDColor color); // stroked inside the rect
+	pub draw_ellipse: extern "C" fn(
+		x: i32, y: i32,
+		w: i32, h: i32,
+		line_width: i32,
+		start_angle: f32,
+		end_angle: f32,
+		color: LCDColor
+	),
+
 	// void (*fillEllipse)(int x, int y, int width, int height, float startAngle, float endAngle, LCDColor color);
+	pub fill_ellipse: extern "C" fn(
+		x: i32, y: i32,
+		w: i32, h: i32,
+		start_angle: f32,
+		end_angle: f32,
+		color: LCDColor
+	),
+
 	// void (*drawScaledBitmap)(LCDBitmap* bitmap, int x, int y, float xscale, float yscale);
+	pub draw_scaled_bitmap: extern "C" fn(bmp: *const LCDBitmap, x: i32, y: i32, xs: f32, ys: f32),
+
 	// int  (*drawText)(const void* text, size_t len, PDStringEncoding encoding, int x, int y);
+	pub draw_text: extern "C" fn(text: *const c_void, len: usize, encoding: PDStringEncoding, x: i32, y: i32)
 }
 
 
@@ -307,7 +331,7 @@ pub type LCDPattern = [u8;16];
 
 #[repr(C)]
 pub union LCDColor {
-	pub color: LCDSolidColor,
+	pub solid_color: LCDSolidColor,
 	pub pattern: *const LCDPattern,
 }
 
@@ -399,7 +423,7 @@ pub struct PlaydateVideo {
 	pub render_frame: extern "C" fn(*const LCDVideoPlayer, n: i32) -> i32,
 	pub get_error: extern "C" fn(*const LCDVideoPlayer) -> *const char,
 	pub get_info: extern "C" fn(
-		*const LCDVideoPlayer, 
+		*const LCDVideoPlayer,
 		out_width: *mut i32,
 		out_height: *mut i32,
 		out_frame_rate: *mut f32,
