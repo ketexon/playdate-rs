@@ -23,8 +23,9 @@ def build(args):
     mode = "debug"
 
     asset_dir = Path.cwd() / "assets"
-    source_dir = Path.cwd() / "target" / "playdate" / "source"
-    game_dir = Path.cwd() / "target" / "playdate" / "game.pdx"
+    playdate_dir = Path.cwd() / "target" / "playdate"
+    source_dir = playdate_dir / "source"
+    game_dir = playdate_dir / "game.pdx"
 
     # Parse cargo.toml
 
@@ -48,15 +49,17 @@ def build(args):
     cargo_build_result = subprocess.run(["cargo", "build"], stdout=stdout, stderr=stderr)
     if cargo_build_result.returncode != 0:
         print(f"cargo build returned with code {cargo_build_result.returncode}. Aborting...")
+        return None
 
     lib_path = Path.cwd() / "target" / mode / f"{package_name}{lib_ext}"
     if not lib_path.is_file():
         print(f"Cannot find output library at \"{str(lib_path)}\". Aborting...")
+        return None
 
+    if playdate_dir.is_dir():
+        rmtree(playdate_dir)
 
-    if source_dir.is_dir():
-        rmtree(source_dir)
-
+    playdate_dir.mkdir()
     source_dir.mkdir()
 
     if asset_dir.is_dir():
@@ -82,8 +85,12 @@ def build(args):
     return game_dir
 
 
-def run(args):
+def run(args) -> bool:
     game_dir = build(None)
+    if game_dir is None:
+        print("Could not build game. Aborting...")
+        return False
+
     subprocess.run(["PlaydateSimulator", game_dir])
 
 

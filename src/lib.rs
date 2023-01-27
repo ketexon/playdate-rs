@@ -1,41 +1,67 @@
+use pdrs::alloc::set_pd_api;
 use std::{ffi::{c_void}, ptr::null};
+use std::pin::Pin;
 
-pub mod event;
-pub mod sys;
-pub mod file;
+pub(crate) mod api;
+pub(crate) mod pdrs;
+use api::{
+    PlaydateAPI,
+    event::{SystemEvent}, graphics::{LCDColor, LCDSolidColor},
+};
 
-pub use event::SystemEvent;
+use pdrs::playdate::Playdate;
 
 #[repr(C)]
-pub struct PlaydateAPI {
-    pub sys: *const sys::PlaydateSys,
-    pub file: *const file::PlaydateFile,
+pub struct UserData {
+    pub pd: &'static Playdate,
+    pub x: f32, pub y: f32,
 }
+
+// static mut PD: Option<Box<Playdate>> = None;
 
 #[no_mangle]
 pub unsafe extern "C" fn eventHandler(
-    pd: *const PlaydateAPI,
+    pd: &'static Playdate,
+    // pd_raw: Playdate,
     ev: SystemEvent,
     arg: u32
 ) -> i32 {
-    let pd = pd.as_ref().unwrap();
-    let sys = pd.sys.as_ref().unwrap();
-    match(ev){
+    match ev {
         SystemEvent::Init => {
-            const s: &'static [u8] = b"Hello from Rust!\0";
-            (sys.log_to_console)(
-                std::mem::transmute(s.as_ptr())
-            );
+            {
+                // let pd = Playdate::from(pd_raw);
+                // pd.init_allocator();
+                // PD = Some(Box::new(pd.clone()));
+            }
+            pd.init_allocator();
+            // PD = Some(Box::new(pd_ref));
+            
 
-            (sys.set_update_callback)(
-                update, null()
-            );
+            // let pd: &Box<Playdate> = PD.as_ref().unwrap();
+            
+            // pd.sys().set_update_callback::<Playdate>(update, &*pd);
+            static mut USERDATA: Option<UserData> = None;
+            USERDATA = Some(UserData {
+                pd: pd,
+                x: 0f32, y: 0f32
+            });
+            pd.sys().set_update_callback(update0, USERDATA.as_ref().unwrap());
         }
-        _ => {}
+        _ => {
+            // let pd = PD.as_ref().unwrap();
+        }
     };
     0
 }
 
-pub extern "C" fn update(userdata: *const c_void) -> i32 {
+pub extern "C" fn update0(userdata: &UserData) -> i32 {
+    let &UserData {pd, x, y} = userdata;
+    pd.print("Hello");
+    // pd.sys().api().get_button_state
+    1
+}
+
+pub extern "C" fn update(pd: &Playdate) -> i32 {
+    // pd.
     1
 }

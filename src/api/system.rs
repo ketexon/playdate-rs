@@ -157,7 +157,11 @@ pub struct PlaydateSys {
 	pub set_update_callback: unsafe extern "C" fn(update: PDCallbackFunction, userdata: *const c_void),
 
 	// void (*getButtonState)(PDButtons* current, PDButtons* pushed, PDButtons* released);
-	pub get_button_state: unsafe extern "C" fn(current: *mut PDButtons, pushed: *mut PDButtons, released: *mut PDButtons),
+	pub get_button_state: unsafe extern "C" fn(
+		current: Option<*mut PDButtons>, 
+		pushed: Option<*mut PDButtons>, 
+		released: Option<*mut PDButtons>
+	),
 
 	// void (*setPeripheralsEnabled)(PDPeripherals mask);
 	pub set_peripherals_enabled: unsafe extern "C" fn(mask: PDPeripherals),
