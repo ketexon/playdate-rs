@@ -1,47 +1,68 @@
 pub extern crate nalgebra as na;
 
-use std::{ptr::{null_mut, null}, default};
-
-use na::Vector2;
-use pdrs::{graphics::Color};
+use na::{Vector2, Point2};
+use pdrs::{graphics::{SolidColor, font::Font}};
 
 pub(crate) mod api;
 pub(crate) mod pdrs;
 use api::{
     PlaydateAPI,
-    event::{SystemEvent}, graphics::{LCDSolidColor}, system::PDButtons,
+    event::{SystemEvent}, graphics::LCDColor,
 };
 
 use pdrs::playdate::Playdate;
 
+use pdrs::graphics::{FontVariant, SCREEN_SIZE};
+
 #[repr(C)]
 pub enum SceneData {
-    Main{text_pos: na::Vector2<f32>},
+    Main{
+        start_time: u32,
+        text: &'static str,
+        text_pos: Point2<f32>
+    },
 }
 
 #[repr(C)]
 pub struct UserData {
     pub pd: &'static Playdate,
+    pub font: Font<'static>,
     pub scene: SceneData
 }
 
 #[no_mangle]
 pub unsafe extern "C" fn eventHandler(
     pd: &'static Playdate,
-    // pd_raw: Playdate,
     ev: SystemEvent,
-    arg: u32
+    _arg: u32
 ) -> i32 {
     static mut USERDATA: Option<Box<UserData>> = None;
     match ev {
         SystemEvent::Init => {
             pd.init_allocator();
 
+            let text = "Hello World!\nHello there!";
+
+            let mut font = pd.graphics.get_system_font(FontVariant::Normal);
+            font.height_offset = -4;
+
+            // let font_height = (pd.graphics.api().get_font_height)(font);
+            let (text_w, text_h) = font.get_text_size(text).unwrap();
+            pd.print(format!("{text_w}x{text_h}"));
+            
             USERDATA = Some(Box::new(UserData {
-                pd: pd,
-                scene: SceneData::Main { text_pos: Vector2::new(200f32, 150f32) }
+                pd,
+                font,
+                scene: SceneData::Main { 
+                    start_time: pd.system.get_unix_time_seconds(),
+                    text, 
+                    text_pos: Point2::new(
+                        ((SCREEN_SIZE.0 - text_w)/2) as f32,
+                        ((SCREEN_SIZE.1 - text_h as i32)/2) as f32
+                    )
+                }
             }));
-            pd.system.set_update_callback(update0, USERDATA.as_mut().unwrap());
+            pd.system.set_update_callback(update, USERDATA.as_mut().unwrap());
         }
         _ => {
         }
@@ -49,33 +70,34 @@ pub unsafe extern "C" fn eventHandler(
     0
 }
 
-pub extern "C" fn update0(mut userdata: &mut UserData) -> i32 {
-    let UserData {pd, scene} = &mut userdata;
+#[allow(unused_variables)]
+pub extern "C" fn update(mut userdata: &mut UserData) -> i32 {
+    let UserData {pd, font, scene} = &mut userdata;
 
     match scene {
-        SceneData::Main { ref mut text_pos } => {
+        SceneData::Main { start_time, text, ref mut text_pos } => {
             let s = pd.system.get_unix_time_seconds();
-            let clear_color = if s % 2 == 0 {
-                Color::Solid(LCDSolidColor::Black)
-            } else {
-                Color::Solid(LCDSolidColor::White)
-            };
-            pd.graphics.clear(clear_color);
 
-            // let (current, pushed, released) = pd.system.get_button_state_raw();
+            (*font).leading_adjustment = (s - *start_time) as i32;
+            font.activate();
+            let (text_size_x, text_size_y) = font.get_text_size(*text).unwrap();
 
-            *text_pos += Vector2::new(1f32, 0f32);
-            pd.print(format!("Text Pos: {}, {}", text_pos.x, text_pos.y));
-            pd.graphics.draw_text("Helo", text_pos.try_cast().unwrap());
+            pd.graphics.clear(SolidColor::White.into());
+
+            *text_pos += na::Scale2::new(1f32, -1f32) * pd.system.get_dpad_axes_normalized();
+
+            pd.graphics.draw_text(text.as_bytes(), Point2::from(text_pos.coords.try_cast().unwrap()));
+            (pd.graphics.api().draw_rect)(
+                text_pos.x as i32, 
+                text_pos.y as i32,
+                text_size_x,
+                text_size_y,
+                LCDColor{solid_color: SolidColor::Black}
+            );
             pd.system.draw_fps(Vector2::new(0,0));
         }
     }
 
     // pd.sys().api().get_button_state
-    1
-}
-
-pub extern "C" fn update(pd: &Playdate) -> i32 {
-    // pd.
     1
 }

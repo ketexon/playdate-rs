@@ -180,7 +180,193 @@ pub struct PlaydateGraphics {
 	pub draw_scaled_bitmap: extern "C" fn(bmp: *const LCDBitmap, x: i32, y: i32, xs: f32, ys: f32),
 
 	// int  (*drawText)(const void* text, size_t len, PDStringEncoding encoding, int x, int y);
-	pub draw_text: extern "C" fn(text: *const c_void, len: usize, encoding: PDStringEncoding, x: i32, y: i32)
+	pub draw_text: extern "C" fn(text: *const c_void, len: usize, encoding: PDStringEncoding, x: i32, y: i32),
+
+
+
+	/*------------------LCDBITMAP------------------- */
+	// LCDBitmap* (*newBitmap)(int width, int height, LCDColor bgcolor);
+	pub new_bitmap: extern "C" fn(w: i32, h: i32, bg_colod: LCDColor) -> *const LCDBitmap,
+
+	// void (*freeBitmap)(LCDBitmap*);
+	pub free_bitmap: extern "C" fn(*const LCDBitmap),
+
+	// LCDBitmap* (*loadBitmap)(const char* path, const char** outerr);
+	pub load_bitmap: extern "C" fn(path: *const char, err: *mut *const char) -> *const LCDBitmap,
+
+	// LCDBitmap* (*copyBitmap)(LCDBitmap* bitmap);
+	pub copy_bitmap: extern "C" fn(*const LCDBitmap) -> *const LCDBitmap,
+
+	// void (*loadIntoBitmap)(const char* path, LCDBitmap* bitmap, const char** outerr);
+	pub load_into_bitmap: extern "C" fn(path: *const char, into: *const LCDBitmap, err: *mut *const char) -> *const LCDBitmap,
+
+	// void (*getBitmapData)(LCDBitmap* bitmap, int* width, int* height, int* rowbytes, uint8_t** mask, uint8_t** data);
+	pub get_bitmap_data: extern "C" fn(
+		bmp: *const LCDBitmap, 
+		w: *mut i32, h: *mut i32, 
+		row_bytes: *mut i32,
+		mask: *mut *const u8,
+		data: *mut *const u8
+	),
+
+	// void (*clearBitmap)(LCDBitmap* bitmap, LCDColor bgcolor);
+	pub clear_bitmap: extern "C" fn(bmp: *const LCDBitmap, color: LCDColor),
+
+	// LCDBitmap* (*rotatedBitmap)(LCDBitmap* bitmap, float rotation, float xscale, float yscale, int* allocedSize);
+	pub rotated_bitmap: extern "C" fn(bmp: *const LCDBitmap, rot: f32, xscale: f32, yscale: f32, alloced_size: i32),
+
+
+
+
+
+
+	/*---------------LCDBitmapTable--------------*/
+	// LCDBitmapTable* (*newBitmapTable)(int count, int width, int height);
+	pub new_bitmap_table: extern "C" fn(count: i32, w: i32, h: i32) -> *const LCDBitmapTable,
+
+	// void (*freeBitmapTable)(LCDBitmapTable* table);
+	pub free_bitmap_table: extern "C" fn(*const LCDBitmapTable),
+
+	// LCDBitmapTable* (*loadBitmapTable)(const char* path, const char** outerr);
+	pub load_bitmap_table: extern "C" fn(path: *const char, err: *mut *const char) -> *const LCDBitmapTable,
+
+	// void (*loadIntoBitmapTable)(const char* path, LCDBitmapTable* table, const char** outerr);
+	pub load_into_bitmap_table: extern "C" fn(
+		path: *const char, into: *const LCDBitmapTable, err: *mut *const char
+	) -> *const LCDBitmapTable,
+
+	// LCDBitmap* (*getTableBitmap)(LCDBitmapTable* table, int idx);
+	pub get_table_bitmap: extern "C" fn(table: *const LCDBitmapTable, idx: i32) -> *const LCDBitmap,
+
+
+
+
+	/*-----------------LCDFont---------------*/
+	// LCDFont* (*loadFont)(const char* path, const char** outErr);
+	pub load_font: extern "C" fn(path: *const char, err: *mut *const char) -> *const LCDFont,
+
+	// LCDFontPage* (*getFontPage)(LCDFont* font, uint32_t c);
+	pub get_font_page: extern "C" fn(font: *const LCDFont, ch: u32) -> *const LCDFontPage,
+
+	// LCDFontGlyph* (*getPageGlyph)(LCDFontPage* page, uint32_t c, LCDBitmap** bitmap, int* advance);
+	pub get_page_glyph: extern "C" fn(
+		page: *const LCDFontPage, ch: u32, bmp: *mut *const LCDBitmap, advance: *mut i32
+	) -> *const LCDFontGlyph,
+
+	// int (*getGlyphKerning)(LCDFontGlyph* glyph, uint32_t glyphcode, uint32_t nextcode);
+	pub get_glyph_kerning: extern "C" fn(glyph: *const LCDFontGlyph, glyph_code: u32, next_code: u32) -> i32,
+
+	// int (*getTextWidth)(LCDFont* font, const void* text, size_t len, PDStringEncoding encoding, int tracking);
+	pub get_text_width: extern "C" fn(
+		font: *const LCDFont, 
+		text: *const c_void, 
+		len: usize, 
+		encoding: PDStringEncoding,
+		tracking: i32
+	) -> i32,
+
+
+
+
+	/*----------------raw framebuffer access-----------*/
+	// uint8_t* (*getFrame)(void); // row stride = LCD_ROWSIZE
+	pub get_frame: extern "C" fn() -> *mut u8, // stride = LCD_ROWSIZE
+
+	// uint8_t* (*getDisplayFrame)(void); // row stride = LCD_ROWSIZE
+	pub get_display_frame: extern "C" fn() -> *const u8, // stride = LCD_ROWSIZE
+
+	// LCDBitmap* (*getDebugBitmap)(void); // valid in simulator only, function is NULL on device
+	pub get_debug_frame: extern "C" fn() -> *const LCDBitmap, // simulator only
+
+	// LCDBitmap* (*copyFrameBufferBitmap)(void);
+	pub copy_framebuffer_bitmap: extern "C" fn() -> *const LCDBitmap,
+
+	// void (*markUpdatedRows)(int start, int end);
+	pub mark_updated_rows: extern "C" fn(start: i32, end: i32),
+
+	// void (*display)(void);
+	pub display: extern "C" fn(),
+
+
+
+
+
+	/*----------------------misc util.-----------------*/
+	// void (*setColorToPattern)(LCDColor* color, LCDBitmap* bitmap, int x, int y);
+	pub set_color_to_pattern: extern "C" fn(color: *const LCDColor, bmp: *const LCDBitmap, x: i32, y: i32),
+
+	// int (*checkMaskCollision)(LCDBitmap* bitmap1, int x1, int y1, LCDBitmapFlip flip1, LCDBitmap* bitmap2, int x2, int y2, LCDBitmapFlip flip2, LCDRect rect);
+	pub check_mask_collision: extern "C" fn(
+		bmp1: *const LCDBitmap, x1: i32, x2: i32, flip1: LCDBitmapFlip,
+		bmp2: *const LCDBitmap, x2: i32, x2: i32, flip2: LCDBitmapFlip,
+		rect: LCDRect,
+	),
+
+
+
+
+
+	/*---------------1.1--------------*/
+	// void (*setScreenClipRect)(int x, int y, int width, int height);
+	pub set_screen_clip_rect: extern "C" fn(x: i32, y: i32, w: i32, h: i32),
+
+
+
+	/*----------------------1.1.1--------------------*/
+	// void (*fillPolygon)(int nPoints, int* coords, LCDColor color, LCDPolygonFillRule fillrule);
+	pub fill_polygon: extern "C" fn(n_points: i32, coords: *const i32, color: LCDColor, fill_rule:LCDPolygonFillRule),
+
+	// uint8_t (*getFontHeight)(LCDFont* font);
+	pub get_font_height: extern "C" fn(font: *const LCDFont) -> u8,
+
+
+
+
+	/*--------------------1.7----------------------*/
+	// LCDBitmap* (*getDisplayBufferBitmap)(void);
+	pub get_display_framebuffer_bitmap: extern "C" fn() -> *const LCDBitmap,
+
+	// void (*drawRotatedBitmap)(LCDBitmap* bitmap, int x, int y, float rotation, float centerx, float centery, float xscale, float yscale);
+	pub draw_rotated_bitmap: extern "C" fn(
+		bmp: *const LCDBitmap,
+		x: i32, y: i32,
+		rot: f32,
+		center_x: f32, center_y: f32,
+		x_scale: f32, y_scale: f32,
+	),
+	
+	// void (*setTextLeading)(int lineHeightAdustment);
+	pub set_text_leading: extern "C" fn(line_height_adjustment: i32),
+
+
+
+
+
+
+	/*-----------------------1.8--------------------*/
+	// int (*setBitmapMask)(LCDBitmap* bitmap, LCDBitmap* mask);
+	pub set_bitmap_mask: extern "C" fn(bmp: *const LCDBitmap, mask: *const LCDBitmap) -> i32,
+
+	// LCDBitmap* (*getBitmapMask)(LCDBitmap* bitmap);
+	pub get_bitmap_mask: extern "C" fn(bmp: *const LCDBitmap) -> *const LCDBitmap,
+
+
+
+
+
+
+	/*------------------------1.10---------------------------*/
+	// void (*setStencilImage)(LCDBitmap* stencil, int tile);
+	pub set_stencil_image: extern "C" fn(stencil: *const LCDBitmap, tile: i32),
+
+
+
+
+
+
+	/*-------------------------1.12---------------------------*/
+	// LCDFont* (*makeFontFromData)(LCDFontData* data, int wide);
+	pub make_font_from_data: extern "C" fn(data: *const LCDFontData, w: i32) -> *const LCDFont,
 }
 
 
@@ -192,24 +378,62 @@ typedef struct
 	int top;
 	int bottom; // not inclusive
 } LCDRect;
+*/
 
+#[repr(C)]
+pub struct LCDRect {
+	left: i32,
+	right: i32, // not inclusive
+	top: i32,
+	bottom: i32, // not inclusive
+}
+
+/*
 static inline LCDRect LCDMakeRect(int x, int y, int width, int height)
 {
 	// XXX - assumes width and height are positive
 	LCDRect r = { .left = x, .right = x + width, .top = y, .bottom = y + height };
 	return r;
 }
+*/
 
+/*
 static inline LCDRect LCDRect_translate(LCDRect r, int dx, int dy)
 {
 	return (LCDRect){ .left = r.left + dx, .right = r.right + dx, .top = r.top + dy, .bottom = r.bottom + dy };
 }
+*/
 
+impl LCDRect {
+	pub fn translate(&self, dx: i32, dy: i32) -> Self {
+		LCDRect { 
+			left: self.left + dx, 
+			right: self.right + dx, 
+			top: self.top + dy, 
+			bottom: self.bottom + dy
+		}
+	}
+}
+
+/*
 #define LCD_COLUMNS	400
 #define LCD_ROWS	240
 #define LCD_ROWSIZE 52
 #define LCD_SCREEN_RECT LCDMakeRect(0,0,LCD_COLUMNS,LCD_ROWS)
+*/
+#[allow(dead_code)]
+pub const LCD_COLUMNS: i32 = 400;
+#[allow(dead_code)]
+pub const LCD_ROWS: i32 = 240;
+#[allow(dead_code)]
+pub const LCD_ROWSIZE: i32 = 52;
+#[allow(dead_code)]
+pub const LCD_SCREEN_RECT: LCDRect = LCDRect {
+	left: 0, right: LCD_COLUMNS,
+	top: 0, bottom: LCD_ROWS,
+};
 
+/*
 typedef enum
 {
 	kDrawModeCopy,
@@ -299,6 +523,7 @@ typedef enum
 } LCDFontLanguage;
 */
 
+#[allow(dead_code)]
 #[repr(C)]
 pub enum LCDFontLanguage {
 	English,
@@ -327,6 +552,12 @@ typedef uint8_t LCDPattern[16]; // 8x8 pattern: 8 rows image data, 8 rows mask
 typedef uintptr_t LCDColor; // LCDSolidColor or pointer to LCDPattern
 */
 
+
+/*
+Somewhat hidden in docs: https://sdk.play.date/1.12.3/Inside%20Playdate.html#f-graphics.setPattern
+first 8 numbers: BMP for each row
+last 8 numbers: alpha mask for each row
+*/
 pub type LCDPattern = [u8;16];
 
 #[repr(C)]
@@ -345,8 +576,13 @@ typedef enum
 	kPolygonFillEvenOdd
 } LCDPolygonFillRule;
 
-#endif
 */
+
+#[repr(C)]
+pub enum LCDPolygonFillRule{
+	NonZero,
+	EvenOdd
+}
 
 /*
 typedef struct LCDBitmap LCDBitmap;
@@ -439,4 +675,5 @@ struct playdate_graphics
 {
 	...
 };
+// defined at top
 */

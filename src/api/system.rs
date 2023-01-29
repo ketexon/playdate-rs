@@ -13,7 +13,7 @@ typedef enum
 */
 
 bitflags! {
-    pub struct PDButtons: i32 {
+    pub struct PDButtonFlags: i32 {
         const LEFT 	= (1<<0);
 		const RIGHT	= (1<<1);
 		const UP		= (1<<2);
@@ -159,10 +159,11 @@ pub struct PlaydateSys {
 	pub set_update_callback: unsafe extern "C" fn(update: PDCallbackFunction, userdata: *const c_void),
 
 	// void (*getButtonState)(PDButtons* current, PDButtons* pushed, PDButtons* released);
+	// use PDButtonFlags as wrapper
 	pub get_button_state: unsafe extern "C" fn(
-		current: *mut i32,
-		pushed: *mut i32,
-		released: *mut i32
+		current: *mut PDButtonFlags,
+		pushed: *mut PDButtonFlags,
+		released: *mut PDButtonFlags
 	),
 
 	// void (*setPeripheralsEnabled)(PDPeripherals mask);
