@@ -4,7 +4,7 @@ use std::{ffi::{CString, NulError}, mem::MaybeUninit};
 
 use crate::{
 	api::{
-		graphics::{PlaydateGraphics, LCDPattern, LCDColor, PDStringEncoding}
+		graphics::{PlaydateGraphics, LCDPattern, LCDColor, PDStringEncoding, make_opaque_pattern, LCDBitmap}
 	}
 };
 
@@ -28,9 +28,183 @@ pub enum FontVariant {
 	Italic
 }
 
+type OpaquePattern = [u8;8];
+
+#[derive(Clone, Copy)]
+pub struct Pattern(LCDPattern);
+
+#[derive(Clone, Copy)]
 pub enum Color {
 	Solid(SolidColor),
-	Pattern(LCDPattern),
+	Pattern(Pattern),
+}
+
+impl Pattern {
+	pub fn new(pattern: [u8;16]) -> Self {
+		Self(pattern)
+	}
+
+	pub fn opaque(pattern: OpaquePattern) -> Self {
+		Self(make_opaque_pattern(pattern))
+	}
+
+	pub fn solid(color: SolidColor) -> Self {
+		match color {
+			SolidColor::White => Self::opaque([0xff;8]),
+			SolidColor::Black => Self::opaque([0x00;8]),
+			SolidColor::Clear => Self([0;16]),
+			SolidColor::XOR => panic!("Pattern::solid does not support SolidColor::XOR")
+		}
+	}
+
+	pub fn invert(&mut self) {
+		for i in 0..8 {
+			self.0[i as usize] = !self.0[i as usize];
+		}
+	}
+
+	pub fn checkerboard(w: u8) -> Self {
+		let mut pattern = [0u8;8];
+		if w != 0 {
+			for i in 0..8 {
+				for j in 0..8 {
+					if i/w % 2 == j/w % 2 {
+						pattern[i as usize] |= 1 << j;
+					}
+				}
+			}
+		}
+
+		Self::opaque(pattern)
+	}
+
+	pub fn horizontal_stripes(h: u8) -> Self {
+		let mut pattern = [0;8];
+		if h != 0 {
+			for i in 0..8 {
+				if i/h % 2 == 0 {
+					pattern[i as usize] = 0xffu8;
+				}
+			}
+		}
+
+		Self::opaque(pattern)
+	}
+
+
+	pub fn vertial_stripes(w: u8) -> Self {
+		let mut pattern = [0;8];
+		if w != 0 {
+			for i in 0..8 {
+				if i/w % 2 == 0 {
+					pattern[i as usize] = 0xffu8;
+				}
+			}
+		}
+
+		Self::opaque(pattern)
+	}
+
+	pub fn diagonal_stripes(w: u8) -> Self {
+		if w == 1 {
+			Self::checkerboard(1)
+		}
+		else if w == 2 {
+			Self::opaque([
+				0b10011001u8,
+				0b11001100u8,
+				0b01100110u8,
+				0b00110011u8,
+				0b10011001u8,
+				0b11001100u8,
+				0b01100110u8,
+				0b00110011u8,
+			])
+		}
+		else if w == 4 {
+			Self::opaque([
+				0b10000111u8,
+				0b11000011u8,
+				0b11100001u8,
+				0b11110000u8,
+				0b01111000u8,
+				0b00111100u8,
+				0b00011110u8,
+				0b00001111u8,
+			])
+		}
+		else if w == 0 {
+			Self::solid(SolidColor::Black)
+		}
+		else if w == 8 {
+			Self::solid(SolidColor::White)
+		}
+		else {
+			panic!("w must be a multiple of 2");
+		}
+	}
+
+
+	pub fn flip_horizontal(&mut self){
+		for b in &mut self.0 {
+			*b = (*b & 0xF0u8) >> 4 | (*b & 0x0Fu8) << 4;
+			*b = (*b & 0xCCu8) >> 2 | (*b & 0x33u8) << 2;
+			*b = (*b & 0xAAu8) >> 1 | (*b & 0x55u8) << 1;
+		}
+	}
+
+	pub fn flip_vertical(&mut self){
+		for i in 0..4 {
+			self.0.swap(i, 7-i);
+			self.0.swap(7+i, 15-i);
+		}
+	}
+
+	pub fn rotate_90(&mut self){
+		let mut new_pattern = [0u8;16];
+		for c in 0..8u8 {
+			new_pattern[c as usize] = self.get_column(c, false);
+			new_pattern[c as usize + 8] = self.get_column(c, true);
+		}
+		self.0 = new_pattern;
+	}
+
+	pub fn rotate_180(&mut self) {
+		self.flip_horizontal();
+		self.flip_vertical();
+	}
+
+	pub fn get_column(&self, c: u8, mask: bool) -> u8 {
+		let mut out = 0u8;
+		for r in 0..8 {
+			out |= if self.0[r as usize + if mask {7} else {0}] & (1 << (7-c)) > 0 {
+				1 << r
+			}
+			else {
+				0
+			};
+		}
+		out
+	}
+}
+
+// impl From<
+
+impl Color {
+	pub fn invert(&mut self) {
+		match self {
+			Self::Solid(ref mut color) => {
+				*color = match color.clone() {
+					SolidColor::Black => SolidColor::White,
+					SolidColor::White => SolidColor::Black,
+					other => other
+				};
+			},
+			Self::Pattern(ref mut pattern) => {
+				pattern.invert()
+			}
+		};
+	}
 }
 
 impl From<SolidColor> for Color {
@@ -39,11 +213,29 @@ impl From<SolidColor> for Color {
 	}
 }
 
+impl From<LCDPattern> for Color {
+	fn from(value: LCDPattern) -> Self {
+		Self::Pattern(Pattern::new(value))
+	}
+}
+
+impl From<OpaquePattern> for Color {
+	fn from(value: OpaquePattern) -> Self {
+		Self::Pattern(Pattern::opaque(value))
+	}
+}
+
+impl From<Pattern> for Color {
+	fn from(value: Pattern) -> Self {
+		Self::Pattern(value)
+	}
+}
+
 impl From<&Color> for LCDColor {
 	fn from(color: &Color) -> Self {
 		match color {
 			Color::Solid(solid_color) => Self { solid_color: solid_color.clone() },
-			Color::Pattern(pattern) => Self { pattern: pattern }
+			Color::Pattern(pattern) => Self { pattern: &pattern.0 }
 		}
 	}
 }

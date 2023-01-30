@@ -1,4 +1,4 @@
-use std::{alloc::GlobalAlloc, ptr::{null, null_mut}, ffi::c_void};
+use std::{alloc::GlobalAlloc, ptr::{null_mut}, ffi::c_void};
 use crate::{
     PlaydateAPI,
     api::system::PlaydateSys
@@ -73,9 +73,6 @@ unsafe impl GlobalAlloc for PDAllocator {
         //     std::mem::transmute::<*mut u8, *mut c_void>(aligned_mem)
         // );
 
-        const ptr_size: usize = std::mem::size_of::<*mut u8>();
-
-        let size = layout.size();
         let align = layout.align();
 
         let mem: *mut u8 = if align == 1 {

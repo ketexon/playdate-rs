@@ -88,7 +88,7 @@ struct playdate_graphics
 };
 */
 
-use std::ffi::c_void;
+use std::{ffi::c_void};
 
 #[repr(C)]
 pub struct PlaydateGraphics {
@@ -202,8 +202,8 @@ pub struct PlaydateGraphics {
 
 	// void (*getBitmapData)(LCDBitmap* bitmap, int* width, int* height, int* rowbytes, uint8_t** mask, uint8_t** data);
 	pub get_bitmap_data: extern "C" fn(
-		bmp: *const LCDBitmap, 
-		w: *mut i32, h: *mut i32, 
+		bmp: *const LCDBitmap,
+		w: *mut i32, h: *mut i32,
 		row_bytes: *mut i32,
 		mask: *mut *const u8,
 		data: *mut *const u8
@@ -258,9 +258,9 @@ pub struct PlaydateGraphics {
 
 	// int (*getTextWidth)(LCDFont* font, const void* text, size_t len, PDStringEncoding encoding, int tracking);
 	pub get_text_width: extern "C" fn(
-		font: *const LCDFont, 
-		text: *const c_void, 
-		len: usize, 
+		font: *const LCDFont,
+		text: *const c_void,
+		len: usize,
 		encoding: PDStringEncoding,
 		tracking: i32
 	) -> i32,
@@ -334,7 +334,7 @@ pub struct PlaydateGraphics {
 		center_x: f32, center_y: f32,
 		x_scale: f32, y_scale: f32,
 	),
-	
+
 	// void (*setTextLeading)(int lineHeightAdustment);
 	pub set_text_leading: extern "C" fn(line_height_adjustment: i32),
 
@@ -406,10 +406,10 @@ static inline LCDRect LCDRect_translate(LCDRect r, int dx, int dy)
 
 impl LCDRect {
 	pub fn translate(&self, dx: i32, dy: i32) -> Self {
-		LCDRect { 
-			left: self.left + dx, 
-			right: self.right + dx, 
-			top: self.top + dy, 
+		LCDRect {
+			left: self.left + dx,
+			right: self.right + dx,
+			top: self.top + dy,
 			bottom: self.bottom + dy
 		}
 	}
@@ -564,6 +564,16 @@ pub type LCDPattern = [u8;16];
 pub union LCDColor {
 	pub solid_color: LCDSolidColor,
 	pub pattern: *const LCDPattern,
+}
+
+pub const fn make_opaque_pattern(pattern: [u8;8]) -> LCDPattern {
+	let mut result = [0xffu8; 16];
+	let mut i = 0;
+	while i < 8 {
+		result[i] = pattern[i];
+		i += 1;
+	}
+	result
 }
 
 /*

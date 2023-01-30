@@ -28,7 +28,7 @@ impl<'a> Font<'a> {
         let len = s_vec.len();
         let n_lines = s_vec.iter().filter(|ch| {**ch == '\n' as u8}).collect::<Vec<&u8>>().len() as i32;
         let height = (
-            (self.graphics.api().get_font_height)(self.lcd_font) as i32 
+            (self.graphics.api().get_font_height)(self.lcd_font) as i32
             + self.height_offset
         ) * (n_lines + 1) + self.leading_adjustment * n_lines;
         CString::new(s_vec)
@@ -52,6 +52,15 @@ impl<'a> Font<'a> {
         (self.graphics.api().set_font)(self.lcd_font);
         (self.graphics.api().set_text_tracking)(self.tracking);
         (self.graphics.api().set_text_leading)(self.leading_adjustment + self.height_offset);
+    }
+
+    pub fn draw_text_checked<T: Into<Vec<u8>>>(&self, s: T, pos: na::Point2<i32>) -> Result<(), NulError> {
+        self.activate();
+        self.graphics.draw_text_checked(s, pos)
+    }
+
+    pub fn draw_text<T: Into<Vec<u8>>>(&self, s: T, pos: na::Point2<i32>) {
+        self.draw_text_checked(s, pos).unwrap()
     }
 }
 

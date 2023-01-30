@@ -1,7 +1,6 @@
 use crate::api::file;
 use crate::api::{
     PlaydateAPI,
-    system::PlaydateSys
 };
 use super::alloc;
 use super::system::System;
