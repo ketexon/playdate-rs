@@ -1,7 +1,7 @@
 use std::{alloc::GlobalAlloc, ptr::{null_mut}, ffi::c_void};
-use crate::{
+use crate::api::{
     PlaydateAPI,
-    api::system::PlaydateSys
+    system::PlaydateSys
 };
 
 static mut PD_API: Option<&PlaydateAPI> = None;
