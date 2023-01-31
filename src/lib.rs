@@ -4,18 +4,16 @@ pub mod api;
 mod pdrs;
 pub use pdrs::*;
 
+pub use pdrs::playdate::Playdate;
 pub use api::event::SystemEvent;
 
 // use na::{Vector2, Point2};
 // use pdrs::{graphics::{SolidColor, font::Font, Color, Pattern}};
 
-
 // use api::{
-//     PlaydateAPI,
-//     event::{SystemEvent}, graphics::{LCDColor},
+//     graphics::{LCDColor},
 // };
 
-// use pdrs::playdate::Playdate;
 
 // use pdrs::graphics::{FontVariant, SCREEN_SIZE};
 

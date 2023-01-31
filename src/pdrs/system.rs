@@ -95,7 +95,11 @@ impl System {
 
 
     /*--------------UPDATE CALLBACK------------------*/
-    pub fn set_update_callback<T>(&self, f: UpdateCallback<T>, userdata: &mut T) {
+    pub fn set_update_callback<T>(&self, f: UpdateCallback<T>, userdata: &T) {
+        unsafe { (self.0.set_update_callback)(std::mem::transmute(f), std::mem::transmute(userdata)); }
+    }
+
+    pub fn set_update_callback_mut<T>(&self, f: UpdateCallback<T>, userdata: &mut T) {
         unsafe { (self.0.set_update_callback)(std::mem::transmute(f), std::mem::transmute(userdata)); }
     }
 
