@@ -1,7 +1,7 @@
 pub extern crate nalgebra as na;
 
-pub(crate) mod api;
-pub(crate) mod pdrs;
+pub mod api;
+pub mod pdrs;
 
 // use na::{Vector2, Point2};
 // use pdrs::{graphics::{SolidColor, font::Font, Color, Pattern}};
