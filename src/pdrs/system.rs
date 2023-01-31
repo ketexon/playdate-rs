@@ -15,7 +15,8 @@ pub use crate::{
 
 pub struct System(PlaydateSys);
 
-pub type UpdateCallback<T> = extern "C" fn(userdata: &mut T) -> i32;
+pub type UpdateCallback<T> = extern "C" fn(userdata: &T) -> i32;
+pub type UpdateCallbackMut<T> = extern "C" fn(userdata: &mut T) -> i32;
 
 // pub struct 
 
@@ -99,7 +100,7 @@ impl System {
         unsafe { (self.0.set_update_callback)(std::mem::transmute(f), std::mem::transmute(userdata)); }
     }
 
-    pub fn set_update_callback_mut<T>(&self, f: UpdateCallback<T>, userdata: &mut T) {
+    pub fn set_update_callback_mut<T>(&self, f: UpdateCallbackMut<T>, userdata: &mut T) {
         unsafe { (self.0.set_update_callback)(std::mem::transmute(f), std::mem::transmute(userdata)); }
     }
 
