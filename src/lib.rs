@@ -4,6 +4,8 @@ pub mod api;
 mod pdrs;
 pub use pdrs::*;
 
+pub use api::event::SystemEvent;
+
 // use na::{Vector2, Point2};
 // use pdrs::{graphics::{SolidColor, font::Font, Color, Pattern}};
 
