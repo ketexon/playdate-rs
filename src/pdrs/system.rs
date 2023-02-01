@@ -5,12 +5,14 @@ use na::Vector2;
 use crate::{
     api::system::{
         PlaydateSys,
-        PDButtonFlags as ButtonFlags
     }
 };
 
 pub use crate::{
-    api::system::{PDLanguage as Language}
+    api::system::{
+        PDLanguage as Language,
+        PDButtonFlags as ButtonFlags
+    }
 };
 
 pub struct System(PlaydateSys);
@@ -205,4 +207,8 @@ impl System {
     pub fn get_dpad_axes_normalized(&self) -> na::Vector2<f32> {
         self.get_dpad_axes().try_normalize(0f32).unwrap_or(na::Vector2::zeros())
     }
+
+    // pub fn add_menu_item(&self) {
+        
+    // }
 }

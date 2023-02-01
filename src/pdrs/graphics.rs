@@ -2,9 +2,11 @@ pub mod font;
 
 use std::{ffi::{CString, NulError}, mem::MaybeUninit};
 
+use nalgebra::{Point2, Vector2};
+
 use crate::{
 	api::{
-		graphics::{PlaydateGraphics, LCDPattern, LCDColor, PDStringEncoding, make_opaque_pattern, LCDBitmap}
+		graphics::{PlaydateGraphics, LCDPattern, LCDColor, PDStringEncoding, make_opaque_pattern, LCDBitmap,}
 	}
 };
 
@@ -14,6 +16,7 @@ pub use crate::{
 			LCDSolidColor as SolidColor,
 			LCD_ROWS,
 			LCD_COLUMNS,
+			LCDBitmapDrawMode as BitmapDrawMode,
 		}
 	}
 };
@@ -246,6 +249,20 @@ pub enum LoadFontError {
 	LoadError(String),
 }
 
+#[derive(Clone, Copy)]
+pub enum FillMode {
+	Filled,
+	Unfilled
+}
+
+#[derive(Clone, Copy)]
+pub struct Rect {
+	pub pos: Point2<i32>,
+	pub size: Vector2<i32>,
+	pub fill_mode: FillMode,
+	pub color: Color,
+}
+
 pub struct Graphics(PlaydateGraphics);
 
 impl Graphics {
@@ -336,5 +353,19 @@ impl Graphics {
 
 	pub fn get_large_system_font(&self) -> Font {
 		self.get_large_system_font_checked().unwrap()
+	}
+
+
+	pub fn set_draw_mode(&self, draw_mode: BitmapDrawMode){
+		(self.0.set_draw_mode)(draw_mode)
+	}
+
+
+	pub fn draw_rect(&self, rect: Rect) {
+		let Rect {pos, size, fill_mode, color} = rect;
+		match fill_mode {
+			FillMode::Filled => (self.0.fill_rect)(pos.x, pos.y, size.x, size.y, (&color).into()),
+			FillMode::Unfilled => (self.0.draw_rect)(pos.x, pos.y, size.x, size.y, (&color).into()),
+		}
 	}
 }
