@@ -5,7 +5,6 @@ mod pdrs;
 pub use pdrs::*;
 
 pub use pdrs::playdate::Playdate;
-pub use api::event::SystemEvent;
 
 // use na::{Vector2, Point2};
 // use pdrs::{graphics::{SolidColor, font::Font, Color, Pattern}};
